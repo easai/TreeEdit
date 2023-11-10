@@ -1,16 +1,17 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
-#include <QInputDialog>
 #include <QFileDialog>
+#include <QInputDialog>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
   ui->setupUi(this);
-    connect(ui->action_Save, &QAction::triggered, this, &MainWindow::saveFile);
+  connect(ui->action_Open, &QAction::triggered, this, &MainWindow::openFile);
+  connect(ui->action_Save, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
 
   setTree();
@@ -73,37 +74,46 @@ void MainWindow::setTree() {
   ui->treeWidget->insertTopLevelItems(0, items);
 }
 
-QJsonObject MainWindow::parseTree(QTreeWidgetItem *pRoot)
-{
+QJsonObject MainWindow::parseTree(QTreeWidgetItem *pRoot) {
   QJsonObject jsonObj;
   QJsonArray jsonArr;
-  jsonObj[JSONLANG]=pRoot->text(0);
-  for(int i=0;i<pRoot->childCount();i++){
-    QTreeWidgetItem *pItem=pRoot->child(i);
-    QJsonObject obj=parseTree(pItem);
+  jsonObj[JSONLANG] = pRoot->text(0);
+  for (int i = 0; i < pRoot->childCount(); i++) {
+    QTreeWidgetItem *pItem = pRoot->child(i);
+    QJsonObject obj = parseTree(pItem);
     jsonArr.append(obj);
   }
-  jsonObj[JSONLIST]=jsonArr;
+  jsonObj[JSONLIST] = jsonArr;
   return jsonObj;
 }
 
-void MainWindow::saveFile()
+void MainWindow::parseJSON(QTreeWidgetItem *pRoot, const QJsonArray &arr)
 {
+  for (QJsonValueConstRef node : arr) {
+    QJsonObject jsonObj = node.toObject();
+    QString lang = jsonObj[JSONLANG].toString();
+    QTreeWidgetItem *newItem = new QTreeWidgetItem(pRoot);
+    newItem->setText(0, lang);
+    parseJSON(newItem, jsonObj[JSONLIST].toArray());
+  }
+}
+
+void MainWindow::saveFile() {
   QJsonObject root;
   QJsonArray jsonArr;
-  for(int i=0;i<ui->treeWidget->topLevelItemCount();i++){
-    QTreeWidgetItem* pRoot=ui->treeWidget->topLevelItem(i);
-    QJsonObject jsonObj=parseTree(pRoot);
+  for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
+    QJsonObject jsonObj = parseTree(pRoot);
     jsonArr.append(jsonObj);
   }
-  root[JSONLIST]=jsonArr;
+  root[JSONLIST] = jsonArr;
   QJsonDocument jsonDoc(root);
   QByteArray data(jsonDoc.toJson());
 
   QString selFilter;
   QString fileName = QFileDialog::getSaveFileName(
-      this, tr("Save"), ".", tr("JSON documents(*.json)"),
-      &selFilter, QFileDialog::DontUseCustomDirectoryIcons);
+      this, tr("Save"), ".", tr("JSON documents(*.json)"), &selFilter,
+      QFileDialog::DontUseCustomDirectoryIcons);
   if (!fileName.isEmpty()) {
     QFile saveFile(fileName);
     saveFile.open(QIODevice::WriteOnly);
@@ -112,8 +122,7 @@ void MainWindow::saveFile()
   }
 }
 
-void MainWindow::openFile()
-{
+void MainWindow::openFile() {
   QString selFilter = tr("JSON Documents(*.json)");
   QString fileName = QFileDialog::getOpenFileName(
       this, tr("Open language list"), ".",
@@ -124,12 +133,18 @@ void MainWindow::openFile()
     openFile.open(QIODevice::ReadOnly);
     QByteArray data = openFile.readAll();
     QJsonDocument jsonDoc(QJsonDocument::fromJson(data));
-    QJsonObject jsonObj(jsonDoc.object());
-    /*
-    QJsonArray jsonArr = jsonObj[JSONTAG].toArray();
-    QList<int> lst;
-    for (auto item : jsonArr) {
-      lst.append(item.toInt());
-    }*/
+    QJsonObject root(jsonDoc.object());
+    QJsonArray jsonArr = root[JSONLIST].toArray();
+    ui->treeWidget->clear();
+    for (QJsonValueRef node : jsonArr) {
+      QJsonObject jsonObj = node.toObject();
+      QString lang = jsonObj[JSONLANG].toString();
+      QJsonArray arr=jsonObj[JSONLIST].toArray();
+      QStringList lst = {lang};
+      QTreeWidgetItem *item =
+          new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), lst);
+      ui->treeWidget->addTopLevelItem(item);
+      parseJSON(item,arr);
+    }
   }
 }

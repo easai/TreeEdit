@@ -30,6 +30,7 @@ private:
 
     void setTree();
     QJsonObject parseTree(QTreeWidgetItem *pRoot);
+    void parseJSON(QTreeWidgetItem *pRoot, const QJsonArray& arr);
     void saveFile();
     void openFile();
 };
