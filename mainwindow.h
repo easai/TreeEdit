@@ -1,6 +1,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#define JSONLANG "lang"
+#define JSONLIST "lang-list"
+
 #include <QMainWindow>
 #include <QTreeWidgetItem>
 
@@ -26,6 +29,8 @@ private:
     QTreeWidgetItem *m_pItem;
 
     void setTree();
-
+    QJsonObject parseTree(QTreeWidgetItem *pRoot);
+    void saveFile();
+    void openFile();
 };
 #endif // MAINWINDOW_H

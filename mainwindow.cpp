@@ -2,80 +2,134 @@
 #include "./ui_mainwindow.h"
 
 #include <QInputDialog>
+#include <QFileDialog>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent)
-    , ui(new Ui::MainWindow)
-{
-    ui->setupUi(this);
-    connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
+    : QMainWindow(parent), ui(new Ui::MainWindow) {
+  ui->setupUi(this);
+    connect(ui->action_Save, &QAction::triggered, this, &MainWindow::saveFile);
+  connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
 
-    setTree();
+  setTree();
 
-    ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->treeWidget, &QTreeWidget::customContextMenuRequested, this,
-            &MainWindow::showContextMenu);
+  ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
+  connect(ui->treeWidget, &QTreeWidget::customContextMenuRequested, this,
+          &MainWindow::showContextMenu);
 }
 
-MainWindow::~MainWindow()
-{
-    delete ui;
+MainWindow::~MainWindow() { delete ui; }
+
+void MainWindow::addItem() {
+  bool ok;
+  QString text = QInputDialog::getText(this, tr("New Item"), tr("New Item:"),
+                                       QLineEdit::Normal, "", &ok);
+  if (ok && !text.isEmpty()) {
+    QTreeWidgetItem *newItem = new QTreeWidgetItem(m_pItem);
+    newItem->setText(0, text);
+  }
 }
 
-void MainWindow::addItem()
-{
-    bool ok;
-    QString text = QInputDialog::getText(this, tr("New Item"),
-                                         tr("New Item:"), QLineEdit::Normal,
-                                         "", &ok);
-    if (ok && !text.isEmpty()){
-        QTreeWidgetItem* newItem=new QTreeWidgetItem(m_pItem);
-        newItem->setText(0, text);
+void MainWindow::deleteItem() {
+  QList<QTreeWidgetItem *> items = ui->treeWidget->selectedItems();
+  QTreeWidgetItem *pp = nullptr;
+
+  if (!items.isEmpty()) {
+    foreach (QTreeWidgetItem *item, items) {
+      pp = item->parent();
+      if (pp != nullptr) {
+        pp->removeChild(item);
+      }
+      delete item;
     }
+  }
 }
 
-void MainWindow::deleteItem()
+void MainWindow::showContextMenu(const QPoint &pos) {
+  QMenu *menu = new QMenu(this);
+
+  QAction *addAction = new QAction("&Add Item");
+  connect(addAction, &QAction::triggered, this, &MainWindow::addItem);
+  menu->addAction(addAction);
+
+  QAction *deleteAction = new QAction("&Delete Item");
+  connect(deleteAction, &QAction::triggered, this, &MainWindow::deleteItem);
+  menu->addAction(deleteAction);
+
+  menu->popup(ui->treeWidget->viewport()->mapToGlobal(pos));
+  m_pItem = ui->treeWidget->itemAt(pos);
+}
+
+void MainWindow::setTree() {
+  QList<QTreeWidgetItem *> items;
+  for (int i = 0; i < 10; ++i) {
+    QTreeWidgetItem *item =
+        new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr),
+                            QStringList(QString("item: %1").arg(i)));
+    items.append(item);
+  }
+  ui->treeWidget->insertTopLevelItems(0, items);
+}
+
+QJsonObject MainWindow::parseTree(QTreeWidgetItem *pRoot)
 {
-    QList<QTreeWidgetItem *>  items = ui->treeWidget->selectedItems();
-    QTreeWidgetItem          *pp    = nullptr;
-
-    if ( !items.isEmpty() )
-    {
-        foreach (QTreeWidgetItem *item, items)
-        {
-            pp = item->parent();
-            if(pp!=nullptr){
-                pp->removeChild(item);
-            }
-            delete item;
-        }
-    }
+  QJsonObject jsonObj;
+  QJsonArray jsonArr;
+  jsonObj[JSONLANG]=pRoot->text(0);
+  for(int i=0;i<pRoot->childCount();i++){
+    QTreeWidgetItem *pItem=pRoot->child(i);
+    QJsonObject obj=parseTree(pItem);
+    jsonArr.append(obj);
+  }
+  jsonObj[JSONLIST]=jsonArr;
+  return jsonObj;
 }
 
-void MainWindow::showContextMenu(const QPoint &pos)
+void MainWindow::saveFile()
 {
-    QMenu *menu = new QMenu(this);
+  QJsonObject root;
+  QJsonArray jsonArr;
+  for(int i=0;i<ui->treeWidget->topLevelItemCount();i++){
+    QTreeWidgetItem* pRoot=ui->treeWidget->topLevelItem(i);
+    QJsonObject jsonObj=parseTree(pRoot);
+    jsonArr.append(jsonObj);
+  }
+  root[JSONLIST]=jsonArr;
+  QJsonDocument jsonDoc(root);
+  QByteArray data(jsonDoc.toJson());
 
-    QAction *addAction = new QAction("&Add Item");
-    connect(addAction, &QAction::triggered, this, &MainWindow::addItem);
-    menu->addAction(addAction);
-
-    QAction *deleteAction = new QAction("&Delete Item");
-    connect(deleteAction, &QAction::triggered, this, &MainWindow::deleteItem);
-    menu->addAction(deleteAction);
-
-    menu->popup(ui->treeWidget->viewport()->mapToGlobal(pos));
-    m_pItem = ui->treeWidget->itemAt(pos);
+  QString selFilter;
+  QString fileName = QFileDialog::getSaveFileName(
+      this, tr("Save"), ".", tr("JSON documents(*.json)"),
+      &selFilter, QFileDialog::DontUseCustomDirectoryIcons);
+  if (!fileName.isEmpty()) {
+    QFile saveFile(fileName);
+    saveFile.open(QIODevice::WriteOnly);
+    saveFile.write(data);
+    saveFile.close();
+  }
 }
 
-void MainWindow::setTree()
+void MainWindow::openFile()
 {
-    QList<QTreeWidgetItem *> items;
-    for (int i = 0; i < 10; ++i){
-        QTreeWidgetItem *item=new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), QStringList(QString("item: %1").arg(i)));
-        items.append(item);
-    }
-    ui->treeWidget->insertTopLevelItems(0, items);
-
+  QString selFilter = tr("JSON Documents(*.json)");
+  QString fileName = QFileDialog::getOpenFileName(
+      this, tr("Open language list"), ".",
+      tr("JSON Documents(*.json);;All(*.*)"), &selFilter,
+      QFileDialog::DontUseCustomDirectoryIcons);
+  if (!fileName.isEmpty()) {
+    QFile openFile(fileName);
+    openFile.open(QIODevice::ReadOnly);
+    QByteArray data = openFile.readAll();
+    QJsonDocument jsonDoc(QJsonDocument::fromJson(data));
+    QJsonObject jsonObj(jsonDoc.object());
+    /*
+    QJsonArray jsonArr = jsonObj[JSONTAG].toArray();
+    QList<int> lst;
+    for (auto item : jsonArr) {
+      lst.append(item.toInt());
+    }*/
+  }
 }
-
