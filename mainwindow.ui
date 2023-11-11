@@ -42,6 +42,7 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="action_New"/>
     <addaction name="action_Open"/>
     <addaction name="action_Save"/>
     <addaction name="action_Quit"/>
@@ -74,6 +75,11 @@
   <action name="action_Save">
    <property name="text">
     <string>&amp;Save</string>
+   </property>
+  </action>
+  <action name="action_New">
+   <property name="text">
+    <string>&amp;New</string>
    </property>
   </action>
  </widget>

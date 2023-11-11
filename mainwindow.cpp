@@ -10,6 +10,7 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
   ui->setupUi(this);
+    connect(ui->action_New, &QAction::triggered, this, &MainWindow::newFile);
   connect(ui->action_Open, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->action_Save, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
@@ -99,6 +100,13 @@ void MainWindow::showContextMenu(const QPoint &pos) {
   m_pItem = ui->treeWidget->itemAt(pos);
 }
 
+void MainWindow::newFile()
+{
+  m_pItem=nullptr;
+  m_pEditItem=nullptr;
+  ui->treeWidget->clear();
+}
+
 void MainWindow::setTree(const QString &fileName) {
   m_config.setFileName(fileName);
   setWindowTitle("TreeEdit - " + fileName);
@@ -108,7 +116,7 @@ void MainWindow::setTree(const QString &fileName) {
   QJsonDocument jsonDoc(QJsonDocument::fromJson(data));
   QJsonObject root(jsonDoc.object());
   QJsonArray jsonArr = root[JSONLIST].toArray();
-  ui->treeWidget->clear();
+  newFile();
   for (QJsonValueRef node : jsonArr) {
     QJsonObject jsonObj = node.toObject();
     QString lang = jsonObj[JSONLANG].toString();
