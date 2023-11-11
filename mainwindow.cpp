@@ -19,6 +19,7 @@ MainWindow::MainWindow(QWidget *parent)
   if(!fileName.isEmpty()){
       setTree(m_config.fileName());
   }
+  setWindowIcon(QIcon("://images/treeedit-favicon.ico"));
 
   ui->treeWidget->setHeaderHidden(true);
   ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
