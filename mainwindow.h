@@ -4,6 +4,7 @@
 #define JSONLANG "lang"
 #define JSONLIST "lang-list"
 
+#include "config.h"
 #include <QMainWindow>
 #include <QTreeWidgetItem>
 
@@ -27,8 +28,9 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QTreeWidgetItem *m_pItem;
+    Config m_config;
 
-    void setTree();
+    void setTree(const QString& fileName);
     QJsonObject parseTree(QTreeWidgetItem *pRoot);
     void parseJSON(QTreeWidgetItem *pRoot, const QJsonArray& arr);
     void saveFile();

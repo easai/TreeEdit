@@ -13,23 +13,40 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->action_Open, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->action_Save, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
+  m_config.load();
+  restoreGeometry(m_config.geom());
+  QString fileName=m_config.fileName();
+  if(!fileName.isEmpty()){
+      setTree(m_config.fileName());
+  }
 
-  setTree();
-
+  ui->treeWidget->setHeaderHidden(true);
   ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(ui->treeWidget, &QTreeWidget::customContextMenuRequested, this,
           &MainWindow::showContextMenu);
 }
 
-MainWindow::~MainWindow() { delete ui; }
+MainWindow::~MainWindow() {
+  m_config.setGeom(saveGeometry());
+  m_config.save();
+  delete ui;
+}
 
 void MainWindow::addItem() {
   bool ok;
   QString text = QInputDialog::getText(this, tr("New Item"), tr("New Item:"),
                                        QLineEdit::Normal, "", &ok);
   if (ok && !text.isEmpty()) {
-    QTreeWidgetItem *newItem = new QTreeWidgetItem(m_pItem);
-    newItem->setText(0, text);
+    if (m_pItem == nullptr) {
+      QStringList lst = {text};
+      QTreeWidgetItem *item =
+          new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), lst);
+      ui->treeWidget->addTopLevelItem(item);
+    } else {
+      QTreeWidgetItem *newItem = new QTreeWidgetItem(m_pItem);
+      newItem->setText(0, text);
+      m_pItem->setExpanded(true);
+    }
   }
 }
 
@@ -63,15 +80,26 @@ void MainWindow::showContextMenu(const QPoint &pos) {
   m_pItem = ui->treeWidget->itemAt(pos);
 }
 
-void MainWindow::setTree() {
-  QList<QTreeWidgetItem *> items;
-  for (int i = 0; i < 10; ++i) {
+void MainWindow::setTree(const QString &fileName) {
+  m_config.setFileName(fileName);
+  setWindowTitle("TreeEdit - "+fileName);
+  QFile openFile(fileName);
+  openFile.open(QIODevice::ReadOnly);
+  QByteArray data = openFile.readAll();
+  QJsonDocument jsonDoc(QJsonDocument::fromJson(data));
+  QJsonObject root(jsonDoc.object());
+  QJsonArray jsonArr = root[JSONLIST].toArray();
+  ui->treeWidget->clear();
+  for (QJsonValueRef node : jsonArr) {
+    QJsonObject jsonObj = node.toObject();
+    QString lang = jsonObj[JSONLANG].toString();
+    QJsonArray arr = jsonObj[JSONLIST].toArray();
+    QStringList lst = {lang};
     QTreeWidgetItem *item =
-        new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr),
-                            QStringList(QString("item: %1").arg(i)));
-    items.append(item);
+        new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), lst);
+    ui->treeWidget->addTopLevelItem(item);
+    parseJSON(item, arr);
   }
-  ui->treeWidget->insertTopLevelItems(0, items);
 }
 
 QJsonObject MainWindow::parseTree(QTreeWidgetItem *pRoot) {
@@ -87,8 +115,7 @@ QJsonObject MainWindow::parseTree(QTreeWidgetItem *pRoot) {
   return jsonObj;
 }
 
-void MainWindow::parseJSON(QTreeWidgetItem *pRoot, const QJsonArray &arr)
-{
+void MainWindow::parseJSON(QTreeWidgetItem *pRoot, const QJsonArray &arr) {
   for (QJsonValueConstRef node : arr) {
     QJsonObject jsonObj = node.toObject();
     QString lang = jsonObj[JSONLANG].toString();
@@ -129,22 +156,6 @@ void MainWindow::openFile() {
       tr("JSON Documents(*.json);;All(*.*)"), &selFilter,
       QFileDialog::DontUseCustomDirectoryIcons);
   if (!fileName.isEmpty()) {
-    QFile openFile(fileName);
-    openFile.open(QIODevice::ReadOnly);
-    QByteArray data = openFile.readAll();
-    QJsonDocument jsonDoc(QJsonDocument::fromJson(data));
-    QJsonObject root(jsonDoc.object());
-    QJsonArray jsonArr = root[JSONLIST].toArray();
-    ui->treeWidget->clear();
-    for (QJsonValueRef node : jsonArr) {
-      QJsonObject jsonObj = node.toObject();
-      QString lang = jsonObj[JSONLANG].toString();
-      QJsonArray arr=jsonObj[JSONLIST].toArray();
-      QStringList lst = {lang};
-      QTreeWidgetItem *item =
-          new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), lst);
-      ui->treeWidget->addTopLevelItem(item);
-      parseJSON(item,arr);
-    }
+    setTree(fileName);
   }
 }
