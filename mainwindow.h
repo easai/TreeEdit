@@ -23,11 +23,14 @@ public:
 private slots:
     void addItem();
     void deleteItem();
+    void updateItem(QTreeWidgetItem* pItem, int col);
+    void closeEditItem();
     void showContextMenu(const QPoint &pos);
 
 private:
     Ui::MainWindow *ui;
     QTreeWidgetItem *m_pItem;
+    QTreeWidgetItem *m_pEditItem=nullptr;
     Config m_config;
 
     void setTree(const QString& fileName);

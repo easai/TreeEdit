@@ -15,9 +15,9 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
   m_config.load();
   restoreGeometry(m_config.geom());
-  QString fileName=m_config.fileName();
-  if(!fileName.isEmpty()){
-      setTree(m_config.fileName());
+  QString fileName = m_config.fileName();
+  if (!fileName.isEmpty()) {
+    setTree(m_config.fileName());
   }
   setWindowIcon(QIcon("://images/treeedit-favicon.ico"));
 
@@ -25,6 +25,10 @@ MainWindow::MainWindow(QWidget *parent)
   ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
   connect(ui->treeWidget, &QTreeWidget::customContextMenuRequested, this,
           &MainWindow::showContextMenu);
+  connect(ui->treeWidget, &QTreeWidget::itemDoubleClicked, this,
+          &MainWindow::updateItem);
+  connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this,
+          &MainWindow::closeEditItem);
 }
 
 MainWindow::~MainWindow() {
@@ -42,9 +46,11 @@ void MainWindow::addItem() {
       QStringList lst = {text};
       QTreeWidgetItem *item =
           new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), lst);
+      item->setFlags(item->flags() & Qt::ItemIsEditable);
       ui->treeWidget->addTopLevelItem(item);
     } else {
       QTreeWidgetItem *newItem = new QTreeWidgetItem(m_pItem);
+      newItem->setFlags(newItem->flags() & Qt::ItemIsEditable);
       newItem->setText(0, text);
       m_pItem->setExpanded(true);
     }
@@ -66,6 +72,18 @@ void MainWindow::deleteItem() {
   }
 }
 
+void MainWindow::updateItem(QTreeWidgetItem *pItem, int col) {
+  m_pEditItem = pItem;
+  ui->treeWidget->openPersistentEditor(pItem);
+  ui->treeWidget->editItem(pItem, col);
+}
+
+void MainWindow::closeEditItem() {
+  if (m_pEditItem != nullptr) {
+    ui->treeWidget->closePersistentEditor(m_pEditItem);
+  }
+}
+
 void MainWindow::showContextMenu(const QPoint &pos) {
   QMenu *menu = new QMenu(this);
 
@@ -83,7 +101,7 @@ void MainWindow::showContextMenu(const QPoint &pos) {
 
 void MainWindow::setTree(const QString &fileName) {
   m_config.setFileName(fileName);
-  setWindowTitle("TreeEdit - "+fileName);
+  setWindowTitle("TreeEdit - " + fileName);
   QFile openFile(fileName);
   openFile.open(QIODevice::ReadOnly);
   QByteArray data = openFile.readAll();
