@@ -24,7 +24,7 @@ private slots:
     void addItem();
     void deleteItem();
     void updateItem(QTreeWidgetItem* pItem, int col);
-    void closeEditItem();
+    void selectItem();
     void showContextMenu(const QPoint &pos);
     void newFile();
     void saveFile();
@@ -41,5 +41,11 @@ private:
     void setTree(const QString& fileName);
     QJsonObject parseTree(QTreeWidgetItem *pRoot);
     void parseJSON(QTreeWidgetItem *pRoot, const QJsonArray& arr);
+    void selectPath(QTreeWidgetItem *pItem);
+    bool _selectPath(QTreeWidgetItem *pRoot, QTreeWidgetItem *pSelected);
+    bool _clearPath(QTreeWidgetItem *pRoot);
+    void closeEditItem();
+    void setBold(QTreeWidgetItem *, bool isBold);
+
 };
 #endif // MAINWINDOW_H

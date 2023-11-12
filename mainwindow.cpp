@@ -30,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->treeWidget, &QTreeWidget::itemDoubleClicked, this,
           &MainWindow::updateItem);
   connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this,
-          &MainWindow::closeEditItem);
+          &MainWindow::selectItem);
 }
 
 MainWindow::~MainWindow() {
@@ -80,10 +80,30 @@ void MainWindow::updateItem(QTreeWidgetItem *pItem, int col) {
   ui->treeWidget->editItem(pItem, col);
 }
 
+void MainWindow::selectItem() {
+  QList<QTreeWidgetItem *> lst = ui->treeWidget->selectedItems();
+  closeEditItem();
+  if (0 < lst.size()) {
+    selectPath(lst[0]);
+  }
+}
+
 void MainWindow::closeEditItem() {
   if (m_pEditItem != nullptr) {
     ui->treeWidget->closePersistentEditor(m_pEditItem);
   }
+}
+
+void MainWindow::setBold(QTreeWidgetItem *pRoot, bool isBold) {
+  QFont font = pRoot->font(0);
+  if (isBold) {
+    font.bold();
+    pRoot->setBackground(0, Qt::lightGray);
+  } else {
+    font.clearFeatures();
+    pRoot->setBackground(0, Qt::white);
+  }
+  pRoot->setFont(0, font);
 }
 
 void MainWindow::showContextMenu(const QPoint &pos) {
@@ -251,5 +271,50 @@ void MainWindow::parseFile(const QString &fileName) {
         }
       }
     }
+  }
+}
+
+bool MainWindow::_selectPath(QTreeWidgetItem *pRoot,
+                             QTreeWidgetItem *pSelected) {
+  bool res = false;
+  if (pRoot == pSelected) {
+    res = true;
+  } else {
+    for (int i = 0; i < pRoot->childCount(); i++) {
+      QTreeWidgetItem *pItem = pRoot->child(i);
+      if (pItem == pSelected) {
+        res = true;
+        setBold(pItem, res);
+        break;
+      } else {
+        res = _selectPath(pItem, pSelected);
+        setBold(pItem, res);
+        if (res)
+          break;
+      }
+    }
+    setBold(pRoot, res);
+  }
+  return res;
+}
+
+bool MainWindow::_clearPath(QTreeWidgetItem *pRoot) {
+  for (int i = 0; i < pRoot->childCount(); i++) {
+    QTreeWidgetItem *pItem = pRoot->child(i);
+    setBold(pItem, false);
+    _clearPath(pItem);
+  }
+}
+
+void MainWindow::selectPath(QTreeWidgetItem *pItem) {
+  for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
+    setBold(pRoot, false);
+    _clearPath(pRoot);
+  }
+  for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
+    bool res = _selectPath(pRoot, pItem);
+    setBold(pRoot, res);
   }
 }
