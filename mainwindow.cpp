@@ -10,9 +10,10 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
   ui->setupUi(this);
-    connect(ui->action_New, &QAction::triggered, this, &MainWindow::newFile);
+  connect(ui->action_New, &QAction::triggered, this, &MainWindow::newFile);
   connect(ui->action_Open, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->action_Save, &QAction::triggered, this, &MainWindow::saveFile);
+  connect(ui->actionParse, &QAction::triggered, this, &MainWindow::selectFile);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
   m_config.load();
   restoreGeometry(m_config.geom());
@@ -100,10 +101,9 @@ void MainWindow::showContextMenu(const QPoint &pos) {
   m_pItem = ui->treeWidget->itemAt(pos);
 }
 
-void MainWindow::newFile()
-{
-  m_pItem=nullptr;
-  m_pEditItem=nullptr;
+void MainWindow::newFile() {
+  m_pItem = nullptr;
+  m_pEditItem = nullptr;
   ui->treeWidget->clear();
 }
 
@@ -129,6 +129,7 @@ void MainWindow::setTree(const QString &fileName) {
   }
 }
 
+// TreeWidget -> JSON
 QJsonObject MainWindow::parseTree(QTreeWidgetItem *pRoot) {
   QJsonObject jsonObj;
   QJsonArray jsonArr;
@@ -142,6 +143,7 @@ QJsonObject MainWindow::parseTree(QTreeWidgetItem *pRoot) {
   return jsonObj;
 }
 
+// JSON -> TreeWidget
 void MainWindow::parseJSON(QTreeWidgetItem *pRoot, const QJsonArray &arr) {
   for (QJsonValueConstRef node : arr) {
     QJsonObject jsonObj = node.toObject();
@@ -152,6 +154,7 @@ void MainWindow::parseJSON(QTreeWidgetItem *pRoot, const QJsonArray &arr) {
   }
 }
 
+// TreeWidget -> JSON
 void MainWindow::saveFile() {
   QJsonObject root;
   QJsonArray jsonArr;
@@ -184,5 +187,63 @@ void MainWindow::openFile() {
       QFileDialog::DontUseCustomDirectoryIcons);
   if (!fileName.isEmpty()) {
     setTree(fileName);
+  }
+}
+
+void MainWindow::selectFile() {
+  QString selFilter = tr("Text Documents(*.txt)");
+  QString fileName = QFileDialog::getOpenFileName(
+      this, tr("Open language list"), ".",
+      tr("Text Documents(*.txt);;All(*.*)"), &selFilter,
+      QFileDialog::DontUseCustomDirectoryIcons);
+  if (!fileName.isEmpty()) {
+    parseFile(fileName);
+  }
+}
+
+void MainWindow::parseFile(const QString &fileName) {
+  QFile openFile(fileName);
+  newFile();
+  if (openFile.open(QIODevice::ReadOnly)) {
+    char buf[1024];
+    QList<QTreeWidgetItem *> nodeList;
+    int level = 0;
+    QStringList lst = {fileName};
+    QTreeWidgetItem *item =
+        new QTreeWidgetItem(static_cast<QTreeWidget *>(nullptr), lst);
+    ui->treeWidget->addTopLevelItem(item);
+    nodeList.append(item);
+    while (openFile.readLine(buf, sizeof(buf)) != -1) {
+      int cnt = 0;
+      for (int i = 0; i < 1024; i++) {
+        if (buf[i] != '*') {
+          break;
+        } else {
+          cnt++;
+        }
+      }
+      char title[1024];
+      int idx = 0;
+      for (int i = 0; i < 1024; i++) {
+        if (buf[i] != '*' && buf[i] != '\n') {
+          title[idx++] = buf[i];
+        }
+        if (buf[i] == '\0') {
+          break;
+        }
+      }
+      if (1 <= cnt) {
+        level = cnt - 1;
+
+        QTreeWidgetItem *pItem = new QTreeWidgetItem(nodeList[level]);
+        pItem->setText(0, title);
+
+        if (level + 1 <= nodeList.size() - 1) {
+          nodeList[level + 1] = pItem;
+        } else {
+          nodeList.append(pItem);
+        }
+      }
+    }
   }
 }

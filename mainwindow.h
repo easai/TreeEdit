@@ -29,6 +29,8 @@ private slots:
     void newFile();
     void saveFile();
     void openFile();
+    void selectFile();
+    void parseFile(const QString& fileName);
 
 private:
     Ui::MainWindow *ui;
