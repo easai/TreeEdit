@@ -109,8 +109,11 @@ void MainWindow::newFile() {
 
 void MainWindow::setTree(const QString &fileName) {
   m_config.setFileName(fileName);
-  setWindowTitle("TreeEdit - " + fileName);
   QFile openFile(fileName);
+  QFileInfo fileInfo(openFile.fileName());
+  QString fn(fileInfo.fileName());
+  setWindowTitle("TreeEdit - " + fn);
+
   openFile.open(QIODevice::ReadOnly);
   QByteArray data = openFile.readAll();
   QJsonDocument jsonDoc(QJsonDocument::fromJson(data));
@@ -203,6 +206,9 @@ void MainWindow::selectFile() {
 
 void MainWindow::parseFile(const QString &fileName) {
   QFile openFile(fileName);
+  QFileInfo fileInfo(openFile.fileName());
+  QString fn(fileInfo.fileName());
+  setWindowTitle("TreeEdit - " + fn);
   newFile();
   if (openFile.open(QIODevice::ReadOnly)) {
     char buf[1024];
