@@ -52,6 +52,8 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
+    <addaction name="action_Expand_all"/>
+    <addaction name="action_Fold_all"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -86,6 +88,16 @@
   <action name="actionParse">
    <property name="text">
     <string>&amp;Parse</string>
+   </property>
+  </action>
+  <action name="action_Expand_all">
+   <property name="text">
+    <string>&amp;Expand all</string>
+   </property>
+  </action>
+  <action name="action_Fold_all">
+   <property name="text">
+    <string>&amp;Fold all</string>
    </property>
   </action>
  </widget>

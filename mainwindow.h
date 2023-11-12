@@ -31,6 +31,8 @@ private slots:
     void openFile();
     void selectFile();
     void parseFile(const QString& fileName);
+    void expandAll();
+    void foldAll();
 
 private:
     Ui::MainWindow *ui;
@@ -43,9 +45,10 @@ private:
     void parseJSON(QTreeWidgetItem *pRoot, const QJsonArray& arr);
     void selectPath(QTreeWidgetItem *pItem);
     bool _selectPath(QTreeWidgetItem *pRoot, QTreeWidgetItem *pSelected);
-    bool _clearPath(QTreeWidgetItem *pRoot);
+    void _clearPath(QTreeWidgetItem *pRoot);
     void closeEditItem();
     void setBold(QTreeWidgetItem *, bool isBold);
+    void toggleAll(QTreeWidgetItem *pRoot, bool expand);
 
 };
 #endif // MAINWINDOW_H

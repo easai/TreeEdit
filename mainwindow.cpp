@@ -14,6 +14,8 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->action_Open, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->action_Save, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->actionParse, &QAction::triggered, this, &MainWindow::selectFile);
+  connect(ui->action_Expand_all, &QAction::triggered, this, &MainWindow::expandAll);
+  connect(ui->action_Fold_all, &QAction::triggered, this, &MainWindow::foldAll);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
   m_config.load();
   restoreGeometry(m_config.geom());
@@ -104,6 +106,15 @@ void MainWindow::setBold(QTreeWidgetItem *pRoot, bool isBold) {
     pRoot->setBackground(0, Qt::white);
   }
   pRoot->setFont(0, font);
+}
+
+void MainWindow::toggleAll(QTreeWidgetItem *pRoot, bool expand)
+{
+  pRoot->setExpanded(expand);
+  for(int i=0;i<pRoot->childCount();i++){
+    QTreeWidgetItem *pItem=pRoot->child(i);
+    toggleAll(pItem, expand);
+  }
 }
 
 void MainWindow::showContextMenu(const QPoint &pos) {
@@ -274,6 +285,22 @@ void MainWindow::parseFile(const QString &fileName) {
   }
 }
 
+void MainWindow::expandAll()
+{
+  for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
+    toggleAll(pRoot,true);
+  }
+}
+
+void MainWindow::foldAll()
+{
+  for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
+    toggleAll(pRoot,false);
+  }
+}
+
 bool MainWindow::_selectPath(QTreeWidgetItem *pRoot,
                              QTreeWidgetItem *pSelected) {
   bool res = false;
@@ -298,7 +325,7 @@ bool MainWindow::_selectPath(QTreeWidgetItem *pRoot,
   return res;
 }
 
-bool MainWindow::_clearPath(QTreeWidgetItem *pRoot) {
+void MainWindow::_clearPath(QTreeWidgetItem *pRoot) {
   for (int i = 0; i < pRoot->childCount(); i++) {
     QTreeWidgetItem *pItem = pRoot->child(i);
     setBold(pItem, false);
