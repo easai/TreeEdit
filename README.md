@@ -34,6 +34,8 @@ The following text would be converted into tree structure as shown.
 
 <img src="images/TreeEdit-screenshot.png" title="ViFlash Settings" width=300/>
 
+<img src="images/TreeEdit.gif" title="ViFlash Settings" />
+
 The nodes are editable. 
 
 Currently, you can only save the tree structure in JSON format. The JSON formatted file can be loaded into the app.
