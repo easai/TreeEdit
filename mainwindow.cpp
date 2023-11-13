@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
 
+#include <QColorDialog>
 #include <QFileDialog>
 #include <QInputDialog>
 #include <QJsonArray>
@@ -14,15 +15,13 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->action_Open, &QAction::triggered, this, &MainWindow::openFile);
   connect(ui->action_Save, &QAction::triggered, this, &MainWindow::saveFile);
   connect(ui->actionParse, &QAction::triggered, this, &MainWindow::selectFile);
-  connect(ui->action_Expand_all, &QAction::triggered, this, &MainWindow::expandAll);
+  connect(ui->action_Expand_all, &QAction::triggered, this,
+          &MainWindow::expandAll);
   connect(ui->action_Fold_all, &QAction::triggered, this, &MainWindow::foldAll);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
   m_config.load();
   restoreGeometry(m_config.geom());
-  QString fileName = m_config.fileName();
-  if (!fileName.isEmpty()) {
-    setTree(m_config.fileName());
-  }
+  reload();
   setWindowIcon(QIcon("://images/treeedit-favicon.ico"));
 
   ui->treeWidget->setHeaderHidden(true);
@@ -90,6 +89,15 @@ void MainWindow::selectItem() {
   }
 }
 
+void MainWindow::colorItem() {
+  QColor color = QColorDialog::getColor(Qt::white, this, tr("Select color"),
+                                        QColorDialog::ShowAlphaChannel);
+  if (color.isValid()) {
+    m_colorTable.insert(m_pItem, color);
+    refresh();
+  }
+}
+
 void MainWindow::closeEditItem() {
   if (m_pEditItem != nullptr) {
     ui->treeWidget->closePersistentEditor(m_pEditItem);
@@ -101,21 +109,26 @@ void MainWindow::setBold(QTreeWidgetItem *pRoot, bool isBold) {
   if (isBold) {
     font.bold();
     pRoot->setBackground(0, Qt::lightGray);
-  } else {
-    font.clearFeatures();
-    pRoot->setBackground(0, Qt::white);
   }
   pRoot->setFont(0, font);
 }
 
-void MainWindow::toggleAll(QTreeWidgetItem *pRoot, bool expand)
-{
+void MainWindow::toggleAll(QTreeWidgetItem *pRoot, bool expand) {
   pRoot->setExpanded(expand);
-  for(int i=0;i<pRoot->childCount();i++){
-    QTreeWidgetItem *pItem=pRoot->child(i);
+  for (int i = 0; i < pRoot->childCount(); i++) {
+    QTreeWidgetItem *pItem = pRoot->child(i);
     toggleAll(pItem, expand);
   }
 }
+
+void MainWindow::reload() {
+  QString fileName = m_config.fileName();
+  if (!fileName.isEmpty()) {
+    setTree(fileName);
+  }
+  m_colorTable.clear();
+}
+
 
 void MainWindow::showContextMenu(const QPoint &pos) {
   QMenu *menu = new QMenu(this);
@@ -127,6 +140,10 @@ void MainWindow::showContextMenu(const QPoint &pos) {
   QAction *deleteAction = new QAction("&Delete Item");
   connect(deleteAction, &QAction::triggered, this, &MainWindow::deleteItem);
   menu->addAction(deleteAction);
+
+  QAction *colorAction = new QAction("&Set Color");
+  connect(colorAction, &QAction::triggered, this, &MainWindow::colorItem);
+  menu->addAction(colorAction);
 
   menu->popup(ui->treeWidget->viewport()->mapToGlobal(pos));
   m_pItem = ui->treeWidget->itemAt(pos);
@@ -285,19 +302,17 @@ void MainWindow::parseFile(const QString &fileName) {
   }
 }
 
-void MainWindow::expandAll()
-{
+void MainWindow::expandAll() {
   for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
     QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
-    toggleAll(pRoot,true);
+    toggleAll(pRoot, true);
   }
 }
 
-void MainWindow::foldAll()
-{
+void MainWindow::foldAll() {
   for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
     QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
-    toggleAll(pRoot,false);
+    toggleAll(pRoot, false);
   }
 }
 
@@ -325,20 +340,34 @@ bool MainWindow::_selectPath(QTreeWidgetItem *pRoot,
   return res;
 }
 
-void MainWindow::_clearPath(QTreeWidgetItem *pRoot) {
+void MainWindow::_refresh(QTreeWidgetItem *pRoot) {
   for (int i = 0; i < pRoot->childCount(); i++) {
     QTreeWidgetItem *pItem = pRoot->child(i);
-    setBold(pItem, false);
-    _clearPath(pItem);
+    QColor color = m_colorTable.value(pItem);
+    if (color != nullptr) {
+      pItem->setBackground(0, color);
+    }else{
+      pItem->setBackground(0, Qt::white);
+    }
+    _refresh(pItem);
+  }
+}
+
+void MainWindow::refresh() {
+  for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
+    QColor color = m_colorTable.value(pRoot);
+    if (color != nullptr) {
+      pRoot->setBackground(0, color);
+    }else{
+      pRoot->setBackground(0, Qt::white);
+    }
+    _refresh(pRoot);
   }
 }
 
 void MainWindow::selectPath(QTreeWidgetItem *pItem) {
-  for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
-    QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
-    setBold(pRoot, false);
-    _clearPath(pRoot);
-  }
+  refresh();
   for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
     QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
     bool res = _selectPath(pRoot, pItem);
