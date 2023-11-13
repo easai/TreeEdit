@@ -34,6 +34,7 @@ private slots:
     void parseFile(const QString& fileName);
     void expandAll();
     void foldAll();
+    void about();
 
 private:
     Ui::MainWindow *ui;

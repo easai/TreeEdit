@@ -26,6 +26,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         config.h config.cpp
         resources.qrc
         icon.rc
+        aboutdialog.h aboutdialog.cpp aboutdialog.ui
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET TreeEdit APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

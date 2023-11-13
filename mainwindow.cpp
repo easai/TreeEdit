@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
+#include "aboutdialog.h"
 
 #include <QColorDialog>
 #include <QFileDialog>
@@ -18,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->action_Expand_all, &QAction::triggered, this,
           &MainWindow::expandAll);
   connect(ui->action_Fold_all, &QAction::triggered, this, &MainWindow::foldAll);
+  connect(ui->action_About_TreeEdit, &QAction::triggered, this,
+          &MainWindow::about);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
   m_config.load();
   restoreGeometry(m_config.geom());
@@ -373,4 +376,9 @@ void MainWindow::selectPath(QTreeWidgetItem *pItem) {
     bool res = _selectPath(pRoot, pItem);
     setBold(pRoot, res);
   }
+}
+
+void MainWindow::about() {
+  AboutDialog *dlg = new AboutDialog(this);
+  dlg->exec();
 }

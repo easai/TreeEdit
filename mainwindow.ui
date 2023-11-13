@@ -59,6 +59,7 @@
     <property name="title">
      <string>&amp;Help</string>
     </property>
+    <addaction name="action_About_TreeEdit"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Edit"/>
@@ -98,6 +99,11 @@
   <action name="action_Fold_all">
    <property name="text">
     <string>&amp;Fold all</string>
+   </property>
+  </action>
+  <action name="action_About_TreeEdit">
+   <property name="text">
+    <string>&amp;About TreeEdit</string>
    </property>
   </action>
  </widget>
