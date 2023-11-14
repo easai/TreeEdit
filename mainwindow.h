@@ -34,6 +34,7 @@ private slots:
     void parseFile(const QString& fileName);
     void expandAll();
     void foldAll();
+    void nthLevel();
     void about();
 
 private:
@@ -52,6 +53,7 @@ private:
     void closeEditItem();
     void setBold(QTreeWidgetItem *, bool isBold);
     void toggleAll(QTreeWidgetItem *pRoot, bool expand);
+    void nthLevelExpand(QTreeWidgetItem *pRoot, int level, int target);
     void reload();
     void refresh();
 };

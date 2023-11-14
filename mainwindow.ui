@@ -54,6 +54,7 @@
     </property>
     <addaction name="action_Expand_all"/>
     <addaction name="action_Fold_all"/>
+    <addaction name="action_Nth_level"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -104,6 +105,11 @@
   <action name="action_About_TreeEdit">
    <property name="text">
     <string>&amp;About TreeEdit</string>
+   </property>
+  </action>
+  <action name="action_Nth_level">
+   <property name="text">
+    <string>&amp;Nth level</string>
    </property>
   </action>
  </widget>

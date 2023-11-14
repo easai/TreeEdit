@@ -19,6 +19,8 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->action_Expand_all, &QAction::triggered, this,
           &MainWindow::expandAll);
   connect(ui->action_Fold_all, &QAction::triggered, this, &MainWindow::foldAll);
+  connect(ui->action_Nth_level, &QAction::triggered, this,
+          &MainWindow::nthLevel);
   connect(ui->action_About_TreeEdit, &QAction::triggered, this,
           &MainWindow::about);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
@@ -124,6 +126,15 @@ void MainWindow::toggleAll(QTreeWidgetItem *pRoot, bool expand) {
   }
 }
 
+void MainWindow::nthLevelExpand(QTreeWidgetItem *pRoot, int level, int target) {
+  pRoot->setExpanded(level < target);
+  level++;
+  for (int i = 0; i < pRoot->childCount(); i++) {
+    QTreeWidgetItem *pItem = pRoot->child(i);
+    nthLevelExpand(pItem, level, target);
+  }
+}
+
 void MainWindow::reload() {
   QString fileName = m_config.fileName();
   if (!fileName.isEmpty()) {
@@ -131,7 +142,6 @@ void MainWindow::reload() {
   }
   m_colorTable.clear();
 }
-
 
 void MainWindow::showContextMenu(const QPoint &pos) {
   QMenu *menu = new QMenu(this);
@@ -319,6 +329,18 @@ void MainWindow::foldAll() {
   }
 }
 
+void MainWindow::nthLevel() {
+  bool ok;
+  int level = QInputDialog::getInt(this, tr("Nth level expand"), tr("Level:"),
+                                   1, 0, 100, 1, &ok);
+  if (ok) {
+    for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+      QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
+      nthLevelExpand(pRoot, 1, level);
+    }
+  }
+}
+
 bool MainWindow::_selectPath(QTreeWidgetItem *pRoot,
                              QTreeWidgetItem *pSelected) {
   bool res = false;
@@ -349,7 +371,7 @@ void MainWindow::_refresh(QTreeWidgetItem *pRoot) {
     QColor color = m_colorTable.value(pItem);
     if (color != nullptr) {
       pItem->setBackground(0, color);
-    }else{
+    } else {
       pItem->setBackground(0, Qt::white);
     }
     _refresh(pItem);
@@ -362,7 +384,7 @@ void MainWindow::refresh() {
     QColor color = m_colorTable.value(pRoot);
     if (color != nullptr) {
       pRoot->setBackground(0, color);
-    }else{
+    } else {
       pRoot->setBackground(0, Qt::white);
     }
     _refresh(pRoot);
