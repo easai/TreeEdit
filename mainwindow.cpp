@@ -8,6 +8,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QFontDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -21,11 +22,14 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->action_Fold_all, &QAction::triggered, this, &MainWindow::foldAll);
   connect(ui->action_Nth_level, &QAction::triggered, this,
           &MainWindow::nthLevel);
+  connect(ui->action_Set_font, &QAction::triggered, this,
+          &MainWindow::setFont);
   connect(ui->action_About_TreeEdit, &QAction::triggered, this,
           &MainWindow::about);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
   m_config.load();
   restoreGeometry(m_config.geom());
+  ui->treeWidget->setFont(m_config.font());
   reload();
   setWindowIcon(QIcon("://images/treeedit-favicon.ico"));
 
@@ -40,6 +44,7 @@ MainWindow::MainWindow(QWidget *parent)
 }
 
 MainWindow::~MainWindow() {
+  m_config.setFont(ui->treeWidget->font());
   m_config.setGeom(saveGeometry());
   m_config.save();
   delete ui;
@@ -133,6 +138,10 @@ void MainWindow::nthLevelExpand(QTreeWidgetItem *pRoot, int level, int target) {
     QTreeWidgetItem *pItem = pRoot->child(i);
     nthLevelExpand(pItem, level, target);
   }
+}
+
+void MainWindow::nthLevelFont(QTreeWidgetItem *pRoot, const QFont &font, int target)
+{
 }
 
 void MainWindow::reload() {
@@ -338,6 +347,15 @@ void MainWindow::nthLevel() {
       QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
       nthLevelExpand(pRoot, 1, level);
     }
+  }
+}
+
+void MainWindow::setFont()
+{
+  bool ok;
+  QFont font = QFontDialog::getFont(&ok, ui->treeWidget->font(), this);
+  if (ok) {
+    ui->treeWidget->setFont(font);
   }
 }
 

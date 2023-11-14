@@ -55,6 +55,7 @@
     <addaction name="action_Expand_all"/>
     <addaction name="action_Fold_all"/>
     <addaction name="action_Nth_level"/>
+    <addaction name="action_Set_font"/>
    </widget>
    <widget class="QMenu" name="menu_Help">
     <property name="title">
@@ -110,6 +111,11 @@
   <action name="action_Nth_level">
    <property name="text">
     <string>&amp;Nth level</string>
+   </property>
+  </action>
+  <action name="action_Set_font">
+   <property name="text">
+    <string>&amp;Set font</string>
    </property>
   </action>
  </widget>

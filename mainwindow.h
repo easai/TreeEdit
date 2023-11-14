@@ -35,6 +35,7 @@ private slots:
     void expandAll();
     void foldAll();
     void nthLevel();
+    void setFont();
     void about();
 
 private:
@@ -54,6 +55,7 @@ private:
     void setBold(QTreeWidgetItem *, bool isBold);
     void toggleAll(QTreeWidgetItem *pRoot, bool expand);
     void nthLevelExpand(QTreeWidgetItem *pRoot, int level, int target);
+    void nthLevelFont(QTreeWidgetItem *pRoot, const QFont& font, int target);
     void reload();
     void refresh();
 };
