@@ -167,6 +167,10 @@ void MainWindow::showContextMenu(const QPoint &pos) {
   connect(colorAction, &QAction::triggered, this, &MainWindow::colorItem);
   menu->addAction(colorAction);
 
+  QAction *jsonAction = new QAction("&Add JSON");
+  connect(jsonAction, &QAction::triggered, this, &MainWindow::openAddFile);
+  menu->addAction(jsonAction);
+
   menu->popup(ui->treeWidget->viewport()->mapToGlobal(pos));
   m_pItem = ui->treeWidget->itemAt(pos);
 }
@@ -260,6 +264,35 @@ void MainWindow::openFile() {
       QFileDialog::DontUseCustomDirectoryIcons);
   if (!fileName.isEmpty()) {
     setTree(fileName);
+  }
+}
+
+void MainWindow::openAddFile()
+{
+  QString selFilter = tr("JSON Documents(*.json)");
+  QString fileName = QFileDialog::getOpenFileName(
+      this, tr("Open language list"), ".",
+      tr("JSON Documents(*.json);;All(*.*)"), &selFilter,
+      QFileDialog::DontUseCustomDirectoryIcons);
+  if (!fileName.isEmpty()) {
+    addTree(m_pItem, fileName);
+  }
+}
+
+void MainWindow::addTree(QTreeWidgetItem *pItem, const QString &fileName)
+{
+  m_config.setFileName(fileName);
+  QFile openFile(fileName);
+  openFile.open(QIODevice::ReadOnly);
+  QByteArray data = openFile.readAll();
+  QJsonDocument jsonDoc(QJsonDocument::fromJson(data));
+  QJsonObject root(jsonDoc.object());
+  QJsonArray jsonArr = root[JSONLIST].toArray();
+  for (QJsonValueRef node : jsonArr) {
+    QJsonObject jsonObj = node.toObject();
+    QString lang = jsonObj[JSONLANG].toString();
+    QJsonArray arr = jsonObj[JSONLIST].toArray();
+    parseJSON(pItem, arr);
   }
 }
 

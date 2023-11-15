@@ -30,6 +30,7 @@ private slots:
     void newFile();
     void saveFile();
     void openFile();
+    void openAddFile();
     void selectFile();
     void parseFile(const QString& fileName);
     void expandAll();
@@ -58,5 +59,6 @@ private:
     void nthLevelFont(QTreeWidgetItem *pRoot, const QFont& font, int target);
     void reload();
     void refresh();
+    void addTree(QTreeWidgetItem* pItem, const QString& fileName);
 };
 #endif // MAINWINDOW_H
