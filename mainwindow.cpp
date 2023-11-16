@@ -9,6 +9,7 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QFontDialog>
+#include <QPushButton>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), ui(new Ui::MainWindow) {
@@ -32,6 +33,15 @@ MainWindow::MainWindow(QWidget *parent)
   ui->treeWidget->setFont(m_config.font());
   reload();
   setWindowIcon(QIcon("://images/treeedit-favicon.ico"));
+
+  m_pEdit=new QLineEdit(ui->statusbar);
+  ui->statusbar->addWidget(m_pEdit);
+
+  QPushButton *pBtn = new QPushButton("Find", ui->statusbar);
+  pBtn->setStyleSheet(
+      "font-size:9px;padding:0px 3px;border:none;margin:0px 3px");
+  ui->statusbar->addWidget(pBtn);
+  connect(pBtn, &QPushButton::clicked, this, &MainWindow::findItem);
 
   ui->treeWidget->setHeaderHidden(true);
   ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -105,6 +115,23 @@ void MainWindow::colorItem() {
   if (color.isValid()) {
     m_colorTable.insert(m_pItem, color);
     refresh();
+  }
+}
+
+void MainWindow::findItem()
+{
+  refresh();
+  QString str=m_pEdit->text();
+  for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
+    if (pRoot->text(0).contains(str)){
+      pRoot->setBackground(0, Qt::lightGray);
+      break;
+    }else{
+      if(_findItem(pRoot,str)){
+        pRoot->setExpanded(true);
+      }
+    }
   }
 }
 
@@ -293,6 +320,25 @@ void MainWindow::addTree(QTreeWidgetItem *pItem, const QString &fileName)
     QString lang = jsonObj[JSONLANG].toString();
     QJsonArray arr = jsonObj[JSONLIST].toArray();
     parseJSON(pItem, arr);
+  }
+}
+
+bool MainWindow::_findItem(QTreeWidgetItem *pRoot, QString str)
+{
+  bool res=false;
+  for (int i = 0; i < pRoot->childCount(); i++) {
+    QTreeWidgetItem *pItem = pRoot->child(i);
+    if(pItem->text(0).contains(str)){
+      pItem->setBackground(0,Qt::lightGray);
+      res=true;
+      break;
+    }else{
+      if(_findItem(pItem, str)){
+        pItem->setExpanded(true);
+        res=true;
+        break;
+      }
+    }
   }
 }
 
