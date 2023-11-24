@@ -276,6 +276,9 @@ void MainWindow::saveFile() {
       this, tr("Save"), ".", tr("JSON documents(*.json)"), &selFilter,
       QFileDialog::DontUseCustomDirectoryIcons);
   if (!fileName.isEmpty()) {
+    if(fileName.endsWith(".json")){
+      fileName+=".json";
+    }
     QFile saveFile(fileName);
     saveFile.open(QIODevice::WriteOnly);
     saveFile.write(data);
@@ -340,6 +343,7 @@ bool MainWindow::_findItem(QTreeWidgetItem *pRoot, QString str)
       }
     }
   }
+  return res;
 }
 
 void MainWindow::selectFile() {
