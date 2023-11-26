@@ -4,11 +4,11 @@
 
 #include <QColorDialog>
 #include <QFileDialog>
+#include <QFontDialog>
 #include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QFontDialog>
 #include <QPushButton>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -23,8 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
   connect(ui->action_Fold_all, &QAction::triggered, this, &MainWindow::foldAll);
   connect(ui->action_Nth_level, &QAction::triggered, this,
           &MainWindow::nthLevel);
-  connect(ui->action_Set_font, &QAction::triggered, this,
-          &MainWindow::setFont);
+  connect(ui->action_Set_font, &QAction::triggered, this, &MainWindow::setFont);
   connect(ui->action_About_TreeEdit, &QAction::triggered, this,
           &MainWindow::about);
   connect(ui->action_Quit, &QAction::triggered, this, &QApplication::quit);
@@ -34,12 +33,11 @@ MainWindow::MainWindow(QWidget *parent)
   reload();
   setWindowIcon(QIcon("://images/treeedit-favicon.ico"));
 
-  m_pEdit=new QLineEdit(ui->statusbar);
+  m_pEdit = new QLineEdit(ui->statusbar);
   ui->statusbar->addWidget(m_pEdit);
 
   QPushButton *pBtn = new QPushButton("Find", ui->statusbar);
-  pBtn->setStyleSheet(
-      "font-size:9px;padding:0px 3px;border:none;margin:0px 3px");
+  pBtn->setStyleSheet("font-size:9px;padding:1px 5px;");
   ui->statusbar->addWidget(pBtn);
   connect(pBtn, &QPushButton::clicked, this, &MainWindow::findItem);
 
@@ -118,17 +116,16 @@ void MainWindow::colorItem() {
   }
 }
 
-void MainWindow::findItem()
-{
+void MainWindow::findItem() {
   refresh();
-  QString str=m_pEdit->text();
+  QString str = m_pEdit->text();
   for (int i = 0; i < ui->treeWidget->topLevelItemCount(); i++) {
     QTreeWidgetItem *pRoot = ui->treeWidget->topLevelItem(i);
-    if (pRoot->text(0).contains(str)){
+    if (pRoot->text(0).contains(str)) {
       pRoot->setBackground(0, Qt::lightGray);
       break;
-    }else{
-      if(_findItem(pRoot,str)){
+    } else {
+      if (_findItem(pRoot, str)) {
         pRoot->setExpanded(true);
       }
     }
@@ -167,9 +164,8 @@ void MainWindow::nthLevelExpand(QTreeWidgetItem *pRoot, int level, int target) {
   }
 }
 
-void MainWindow::nthLevelFont(QTreeWidgetItem *pRoot, const QFont &font, int target)
-{
-}
+void MainWindow::nthLevelFont(QTreeWidgetItem *pRoot, const QFont &font,
+                              int target) {}
 
 void MainWindow::reload() {
   QString fileName = m_config.fileName();
@@ -276,8 +272,8 @@ void MainWindow::saveFile() {
       this, tr("Save"), ".", tr("JSON documents(*.json)"), &selFilter,
       QFileDialog::DontUseCustomDirectoryIcons);
   if (!fileName.isEmpty()) {
-    if(fileName.endsWith(".json")){
-      fileName+=".json";
+    if (fileName.endsWith(".json")) {
+      fileName += ".json";
     }
     QFile saveFile(fileName);
     saveFile.open(QIODevice::WriteOnly);
@@ -297,8 +293,7 @@ void MainWindow::openFile() {
   }
 }
 
-void MainWindow::openAddFile()
-{
+void MainWindow::openAddFile() {
   QString selFilter = tr("JSON Documents(*.json)");
   QString fileName = QFileDialog::getOpenFileName(
       this, tr("Open language list"), ".",
@@ -309,8 +304,7 @@ void MainWindow::openAddFile()
   }
 }
 
-void MainWindow::addTree(QTreeWidgetItem *pItem, const QString &fileName)
-{
+void MainWindow::addTree(QTreeWidgetItem *pItem, const QString &fileName) {
   m_config.setFileName(fileName);
   QFile openFile(fileName);
   openFile.open(QIODevice::ReadOnly);
@@ -326,24 +320,21 @@ void MainWindow::addTree(QTreeWidgetItem *pItem, const QString &fileName)
   }
 }
 
-bool MainWindow::_findItem(QTreeWidgetItem *pRoot, QString str)
-{
-  bool res=false;
+bool MainWindow::_findItem(QTreeWidgetItem *pRoot, QString str) {
   for (int i = 0; i < pRoot->childCount(); i++) {
     QTreeWidgetItem *pItem = pRoot->child(i);
-    if(pItem->text(0).contains(str)){
-      pItem->setBackground(0,Qt::lightGray);
-      res=true;
-      break;
-    }else{
-      if(_findItem(pItem, str)){
+    if (pItem->text(0).contains(str)) {
+      pItem->setBackground(0, Qt::lightGray);
+      pItem->setExpanded(true);
+      return true;
+    } else {
+      if (_findItem(pItem, str)) {
         pItem->setExpanded(true);
-        res=true;
-        break;
+        return true;
       }
     }
   }
-  return res;
+  return false;
 }
 
 void MainWindow::selectFile() {
@@ -433,8 +424,7 @@ void MainWindow::nthLevel() {
   }
 }
 
-void MainWindow::setFont()
-{
+void MainWindow::setFont() {
   bool ok;
   QFont font = QFontDialog::getFont(&ok, ui->treeWidget->font(), this);
   if (ok) {
